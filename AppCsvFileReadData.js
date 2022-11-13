@@ -18,6 +18,9 @@ import {
 } from 'react-native-fs';
 import DocumentPicker from 'react-native-document-picker';
 import XLSX from 'xlsx';
+import { openDatabase } from 'react-native-sqlite-storage';
+ 
+var db = openDatabase({ name: 'sfa_sales.db' });
 
 const App = () => {
   const [userId, onChangeUserId] = React.useState(null);
@@ -78,6 +81,7 @@ const App = () => {
             const data = XLSX.utils.sheet_to_json(ws, {header: 1});
             var temp = [];
             for (let i = 0; i < data.length; i++) {
+
               temp.push({
                 id: data[i][0],
                 name: data[i][1],
