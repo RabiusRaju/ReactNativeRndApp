@@ -11,6 +11,8 @@ import {
 import LottieSplashScreen from 'react-native-lottie-splash-screen';
 import QRCodeScanner from 'react-native-qrcode-scanner';
 import {RNCamera} from 'react-native-camera';
+import QRCode from 'react-native-qrcode-svg';
+
 import {openDatabase} from 'react-native-sqlite-storage';
 
 var db = openDatabase({name: 'sfa_sales.db'});
@@ -34,7 +36,7 @@ const App = () => {
 
   const creatDb = async () => {
     db.transaction(function (tx) {
-      tx.executeSql('DROP TABLE IF EXISTS tbl_product', []);
+      //tx.executeSql('DROP TABLE IF EXISTS tbl_product', []);
       tx.executeSql(
         'CREATE TABLE IF NOT EXISTS tbl_product (id INTEGER PRIMARY KEY AUTOINCREMENT, item_code VARCHAR(20), item_description VARCHAR(20), item_price INT(10))',
         [],
@@ -51,6 +53,10 @@ const App = () => {
     setScanNeeded(true);
   };
 
+  const backMain = () => {
+    setAddProduct(true);
+    setScannProduct(true);
+  };
   const saveProduct = () => {
     if (itemCode !== null && itemDescription !== null && itemPrice !== null) {
       db.transaction(function (tx) {
@@ -64,7 +70,7 @@ const App = () => {
               setItemPrice(null);
 
               Alert.alert('Success', 'New Product Added Successfully', [
-                {text: 'OK', onPress: () => setAddProduct(0)},
+                {text: 'OK', onPress: () => setAddProduct(true)},
               ]);
             }
           },
@@ -76,11 +82,29 @@ const App = () => {
   };
 
   const onSuccessQR = e => {
-    // Linking.openURL(e.data).catch(err =>
-    //   console.error('An error occured', err),
-    // );
-    setAddProduct(false);
-    setScannProduct(true);
+    console.log('Product Code ', e.data);
+    var ite_code = e.data;
+    if (e.data != null) {
+      db.transaction(tx => {
+        tx.executeSql(
+          'SELECT * FROM tbl_product WHERE item_code=?;',
+          [ite_code],
+          (res, results) => {
+            if (results.rows.length > 0) {
+              Alert.alert('Success', 'This Product Already Exits', [
+                {text: 'Ok', onPress: () => backMain()},
+              ]);
+            } else {
+              Alert.alert('Error', 'This Product  Not Found', [
+                {text: 'Ok', onPress: () => backMain()},
+              ]);
+            }
+          },
+        );
+      });
+    } else {
+      Alert.alert('Product Scann not Complete. Plz Try Again!!');
+    }
   };
   return (
     <View style={styles.container}>
@@ -144,7 +168,9 @@ const App = () => {
             onRead={onSuccessQR}
             flashMode={RNCamera.Constants.FlashMode.torch}
             topContent={
-              <Text style={styles.centerText}>
+              <Text
+                style={styles.centerText}
+                onPress={() => setAddProduct(false)}>
                 Go to{' '}
                 <Text style={styles.textBold}>wikipedia.org/wiki/QR_code</Text>{' '}
                 on your computer and scan the QR code.
